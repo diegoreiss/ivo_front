@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="m-5">
     <table class="table table-bordered table-striped">
       <thead>
         <tr>

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="m-5">
     <h1>pendencias</h1>
   </div>
 </template>
