@@ -146,4 +146,8 @@ export default {
 #navbarListLinks li a {
   text-decoration: none;
 }
+
+.active {
+  background-color: #da494e !important;
+}
 </style>

@@ -1,34 +1,207 @@
 <template>
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">#</th>
-        <th scope="col">First</th>
-        <th scope="col">Last</th>
-        <th scope="col">Handle</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <th scope="row">1</th>
-        <td>Mark</td>
-        <td>Otto</td>
-        <td>@mdo</td>
-      </tr>
-      <tr>
-        <th scope="row">2</th>
-        <td>Jacob</td>
-        <td>Thornton</td>
-        <td>@fat</td>
-      </tr>
-    </tbody>
-  </table>
+  <div class="m-5">
+    <table class="table table-bordered table-striped">
+      <thead>
+        <tr>
+          <th scope="col" class="d-none">#</th>
+          <th scope="col">Nome Completo</th>
+          <th scope="col">Email</th>
+          <th scope="col">Usuário Ativo</th>
+          <th scope="col">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="aluno in alunos" :key="aluno.pk">
+          <td class="d-none">{{ aluno.pk }}</td>
+          <td>{{ aluno.first_name }} {{ aluno.last_name }}</td>
+          <td>{{ aluno.email }}</td>
+          <td v-if="aluno.is_active">
+            <i class="bi bi-check-square-fill text-success"></i>
+          </td>
+          <td v-else><i class="bi bi-x-square-fill text-danger"></i></td>
+          <td v-if="!aluno.is_active">
+            <button
+              @click="criarAcessoModal(aluno.pk, aluno.first_name, aluno.email)"
+              type="button"
+              class="btn btn-primary"
+            >
+              Criar Acesso
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div
+      class="modal fade"
+      id="exampleModal"
+      tabindex="-1"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="exampleModalLabel">
+              Criar Acesso
+            </h1>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form @submit="criarAcesso">
+              <div class="mb-3">
+                <label for="senha-provisoria" class="col-form-label"
+                  >Senha:</label
+                >
+                <input
+                  v-model="criarAcessoData.senha"
+                  type="text"
+                  class="form-control"
+                  id="senha-provisoria"
+                  required
+                />
+                <input type="hidden" name="emailAluno" />
+                <input type="hidden" name="pkAluno" />
+              </div>
+              <div>
+                <strong>OBS:</strong>
+                O usuário deve trocar a senha no primeiro login.
+              </div>
+              <div class="modal-footer">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  data-bs-dismiss="modal"
+                >
+                  Fechar
+                </button>
+                <button
+                  id="modalBtnConfirm"
+                  @click="criarAcesso"
+                  type="button"
+                  class="btn btn-primary"
+                >
+                  <span
+                    id="spinner"
+                    class="spinner-border spinner-border-sm me-2 d-none"
+                    aria-hidden="true"
+                  ></span>
+                  <span role="status">Confirmar</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ToastComponent :toastData="toastData" />
+  </div>
 </template>
 
 <script>
+import cookieUtils from "@/utils/cookieUtils";
+import { Modal, Toast } from "bootstrap";
+import ToastComponent from "@/components/ToastComponent.vue";
+
 export default {
   name: "AlunosView",
+  data() {
+    return {
+      alunos: [],
+      criarAcessoData: {
+        senha: "",
+      },
+      toastData: {
+        header: "",
+        body: "",
+      },
+    };
+  },
+  components: {
+    ToastComponent,
+  },
+  created() {},
   mounted() {
-  }
+    this.getAllAlunos();
+  },
+  methods: {
+    async getAllAlunos() {
+      const auth = cookieUtils.getCookie("ivo_access_token");
+      const req = await fetch(
+        `${process.env.VUE_APP_IVO_API_URL}/user/role/aluno/`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${auth}`,
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const res = await req.json();
+
+      this.alunos = res;
+    },
+    criarAcessoModal(pk, firstName, email) {
+      const exampleModal = document.querySelector("#exampleModal");
+      exampleModal.querySelector(
+        'input[type="hidden"][name="emailAluno"]'
+      ).value = email;
+      exampleModal.querySelector('input[type="hidden"][name="pkAluno"]').value =
+        pk;
+      exampleModal.querySelector(
+        ".modal-title"
+      ).innerHTML = `Criar acesso para ${firstName}`;
+      new Modal(exampleModal, {}).show();
+    },
+    async criarAcesso() {
+      const exampleModal = document.querySelector("#exampleModal"),
+        data = {
+          pk: exampleModal.querySelector('input[type="hidden"][name="pkAluno"]')
+            .value,
+          email: exampleModal.querySelector(
+            'input[type="hidden"][name="emailAluno"]'
+          ).value,
+          senha: this.criarAcessoData.senha,
+        };
+
+      if (!data.senha) return;
+
+      const modalBtnConfirm = document.querySelector("#modalBtnConfirm");
+      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
+      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
+        "Carregando...";
+
+      const auth = cookieUtils.getCookie("ivo_access_token"),
+        req = await fetch(
+          `${process.env.VUE_APP_IVO_API_URL}/user/${data.pk}/`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${auth}`,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              password: data.senha,
+            }),
+          }
+        ),
+        res = await req.json();
+      console.log(res);
+      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
+      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
+        "Confirmar";
+      exampleModal.querySelector('button[class="btn-close"]').click();
+      this.toastData.header = "Criar Acesso";
+      this.toastData.body = "Senha próvisória criada com sucesso!";
+      Toast.getOrCreateInstance(document.querySelector("#liveToast")).show();
+    },
+  },
 };
 </script>
