@@ -1,5 +1,7 @@
 <template>
-  <h1>Relatórios</h1>
+  <div class="m-5">
+    <h1>Relatórios</h1>
+  </div>
 </template>
 
 <script>

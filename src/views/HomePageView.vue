@@ -1,7 +1,7 @@
 <template>
   <div id="pageBody" class="d-flex flex-nowrap">
     <SidebarComponent />
-    <div class="w-100 m-5">
+    <div id="sectionBody" class="w-100" style="background-color: #faf1e4;">
       <router-view />
     </div>
   </div>
