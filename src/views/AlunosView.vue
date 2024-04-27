@@ -106,6 +106,7 @@
 import cookieUtils from "@/utils/cookieUtils";
 import { Modal, Toast } from "bootstrap";
 import ToastComponent from "@/components/ToastComponent.vue";
+import IvoUserService from "@/services/ivo/user/IvoUserService";
 
 export default {
   name: "AlunosView",
@@ -130,22 +131,8 @@ export default {
   },
   methods: {
     async getAllAlunos() {
-      const auth = cookieUtils.getCookie("ivo_access_token");
-      const req = await fetch(
-        `${process.env.VUE_APP_IVO_API_URL}/user/role/aluno/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${auth}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const res = await req.json();
-
-      this.alunos = res;
+      const ivoUserService = new IvoUserService();
+      this.alunos = await ivoUserService.getAllAlunos();
     },
     criarAcessoModal(pk, firstName, email) {
       const exampleModal = document.querySelector("#exampleModal");
