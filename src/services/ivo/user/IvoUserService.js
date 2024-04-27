@@ -1,3 +1,4 @@
+import CustomDataResponse from "@/responses/CustomDataResponse";
 import cookieUtils from "@/utils/cookieUtils";
 
 
@@ -17,6 +18,6 @@ export default class IvoUserService {
       }
     });
 
-    return await request.json();
+    return new CustomDataResponse(request.status, await request.json());
   }
 }
