@@ -131,8 +131,16 @@ export default {
   },
   methods: {
     async getAllAlunos() {
-      const ivoUserService = new IvoUserService();
-      this.alunos = await ivoUserService.getAllAlunos();
+      const ivoUserService = new IvoUserService(),
+        response = await ivoUserService.getAllAlunos();
+      
+      switch (response.status_code) {
+        case 200:
+          this.alunos = response.json;
+          break;
+        default:
+          break;
+      }
     },
     criarAcessoModal(pk, firstName, email) {
       const exampleModal = document.querySelector("#exampleModal");
