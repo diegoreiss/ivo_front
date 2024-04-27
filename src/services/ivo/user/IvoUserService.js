@@ -20,4 +20,18 @@ export default class IvoUserService {
 
     return new CustomDataResponse(request.status, await request.json());
   }
+
+  async criarAcessoAluno(body, id, path = `/${id}/`, method = 'PATCH') {
+    const request = await fetch(`${process.env.VUE_APP_IVO_API_URL}${IvoUserService.endpoint}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.cookie}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body,
+    });
+
+    return new CustomDataResponse(request.status, await request.json());
+  }
 }
