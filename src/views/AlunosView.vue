@@ -120,6 +120,7 @@ export default {
       toastData: {
         header: "",
         body: "",
+        textBg: "",
       },
       btnCriarAcesso: {
         text: "Confirmar",
@@ -185,18 +186,24 @@ export default {
           data.pk
         );
 
-      console.log(response.json);
-      console.log(response.status_code);
+      switch (response.status_code) {
+        case 200:
+          this.btnCriarAcesso.text = "Confirmar";
+          this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
+          this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
 
-      this.btnCriarAcesso.text = "Confirmar";
-      this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
-      this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
+          exampleModal.querySelector('button[class="btn-close"]').click();
 
-      exampleModal.querySelector('button[class="btn-close"]').click();
-
-      this.toastData.header = "Criar Acesso";
-      this.toastData.body = "Senha próvisória criada com sucesso!";
-      Toast.getOrCreateInstance(document.querySelector("#liveToast")).show();
+          this.toastData.header = "Criar Acesso";
+          this.toastData.body = "Senha próvisória criada com sucesso!";
+          this.toastData.textBg = "text-bg-primary";
+          Toast.getOrCreateInstance(
+            document.querySelector("#liveToast")
+          ).show();
+          break;
+        default:
+          break;
+      }
     },
   },
 };
