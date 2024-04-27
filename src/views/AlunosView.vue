@@ -84,13 +84,15 @@
                   @click="criarAcesso"
                   type="button"
                   class="btn btn-primary"
+                  :disabled="btnCriarAcesso.disabled"
                 >
                   <span
                     id="spinner"
                     class="spinner-border spinner-border-sm me-2 d-none"
                     aria-hidden="true"
+                    v-show="btnCriarAcesso.spinner"
                   ></span>
-                  <span role="status">Confirmar</span>
+                  <span role="status">{{ btnCriarAcesso.text }}</span>
                 </button>
               </div>
             </form>
@@ -103,7 +105,6 @@
 </template>
 
 <script>
-import cookieUtils from "@/utils/cookieUtils";
 import { Modal, Toast } from "bootstrap";
 import ToastComponent from "@/components/ToastComponent.vue";
 import IvoUserService from "@/services/ivo/user/IvoUserService";
@@ -120,6 +121,11 @@ export default {
         header: "",
         body: "",
       },
+      btnCriarAcesso: {
+        text: "Confirmar",
+        spinner: false,
+        disabled: false,
+      },
     };
   },
   components: {
@@ -133,7 +139,7 @@ export default {
     async getAllAlunos() {
       const ivoUserService = new IvoUserService(),
         response = await ivoUserService.getAllAlunos();
-      
+
       switch (response.status_code) {
         case 200:
           this.alunos = response.json;
@@ -167,32 +173,27 @@ export default {
 
       if (!data.senha) return;
 
-      const modalBtnConfirm = document.querySelector("#modalBtnConfirm");
-      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
-      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
-        "Carregando...";
+      this.btnCriarAcesso.text = "Aguarde...";
+      this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
+      this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
 
-      const auth = cookieUtils.getCookie("ivo_access_token"),
-        req = await fetch(
-          `${process.env.VUE_APP_IVO_API_URL}/user/${data.pk}/`,
-          {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${auth}`,
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              password: data.senha,
-            }),
-          }
-        ),
-        res = await req.json();
-      console.log(res);
-      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
-      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
-        "Confirmar";
+      const ivoUserService = new IvoUserService(),
+        response = await ivoUserService.criarAcessoAluno(
+          JSON.stringify({
+            password: data.senha,
+          }),
+          data.pk
+        );
+
+      console.log(response.json);
+      console.log(response.status_code);
+
+      this.btnCriarAcesso.text = "Confirmar";
+      this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
+      this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
+
       exampleModal.querySelector('button[class="btn-close"]').click();
+
       this.toastData.header = "Criar Acesso";
       this.toastData.body = "Senha próvisória criada com sucesso!";
       Toast.getOrCreateInstance(document.querySelector("#liveToast")).show();
