@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import cookieUtils from "@/utils/cookieUtils";
+import IvoUserService from "@/services/ivo/user/IvoUserService";
 
 const routes = [
   {
@@ -50,30 +51,21 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   if (to.path === '/auth/login') return;
 
-  const auth = cookieUtils.getCookie('ivo_access_token');
+  const ivoUserService = new IvoUserService(),
+    response = await ivoUserService.getCurrentUser();
 
-  if (!auth) return { name: 'LoginView' };
+  switch (response.status_code) {
+    case 401:
+    case 403:
+      cookieUtils.deleteCookie('ivo_access_token');
+      cookieUtils.deleteCookie('ivo_refresh_token');
 
-  const res = await fetch(`${process.env.VUE_APP_IVO_API_URL}/user/current/`, {
-    headers: {
-      Authorization: `Bearer ${auth}`,
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    switch (response.status) {
-      case 200:
-        return response.json();
-      default:
-        return response.status;
-    }
-  });
+      return { name: 'LoginView' };
+    default:
+      break;
+  }
 
-  if (res === 401 || res === 403) {
-    cookieUtils.deleteCookie('ivo_access_token');
-    cookieUtils.deleteCookie('ivo_refresh_token');
-    return { name: 'LoginView' };
-  } 
+  console.log(response.json);
 });
 
 export default router;
