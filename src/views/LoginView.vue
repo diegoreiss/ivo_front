@@ -101,7 +101,7 @@ export default {
         case 200:
           cookieUtils.setCookie("ivo_access_token", response.json.access);
           cookieUtils.setCookie("ivo_refresh_token", response.json.refresh);
-          router.push({ name: "auth.mudarsenha" });
+          router.push({ name: "HomePage" });
           break;
         default:
           break;
