@@ -66,6 +66,7 @@
 
 <script>
 import router from '@/router';
+import IvoUserService from '@/services/ivo/user/IvoUserService';
 import cookieUtils from '@/utils/cookieUtils';
 
 export default {
@@ -78,27 +79,22 @@ export default {
       },
     }
   },
-  created() {
-    const auth = cookieUtils.getCookie('ivo_access_token');
-    fetch(`${process.env.VUE_APP_IVO_API_URL}/user/current/`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth}`,
-      },
-    }).then((response) => {
-      switch(response.status) {
-        case 200:
-          return response.json();
-        case 401:
-          router.push({ name: 'LoginView' });
-      }
-    }).then((data) => {
-      this.user.firstName = data.first_name;
-      this.user.role = data.role;
-      console.log(data);
-    });
+  async created() {
+    const ivoUserService = new IvoUserService(),
+      response = await ivoUserService.getCurrentUser();
+    
+    switch (response.status_code) {
+      case 401:
+      case 403:
+        router.push({ name: 'auth.login' })
+        break;
+      case 200:
+        this.user.role = response.json.role;
+        break;
+      default:
+        break;
+    }
+
   },
   mounted() {
     this.$nextTick(function() {
@@ -133,7 +129,7 @@ export default {
           case 200:
             cookieUtils.deleteCookie('ivo_refresh_token');
             cookieUtils.deleteCookie('ivo_access_token');
-            router.push({ name: 'LoginView' });
+            router.push({ name: 'auth.login' });
             break;
         }
       });
