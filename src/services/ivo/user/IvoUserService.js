@@ -34,4 +34,16 @@ export default class IvoUserService {
 
     return new CustomDataResponse(request.status, await request.json());
   }
+
+  async getCurrentUser(path = `/current/`, method = 'GET') {
+    const request = await fetch(`${process.env.VUE_APP_IVO_API_URL}${IvoUserService.endpoint}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.cookie}`,
+        Accept: 'application/json',
+      },
+    });
+
+    return new CustomDataResponse(request.status, await request.json());
+  }
 }
