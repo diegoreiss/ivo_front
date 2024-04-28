@@ -178,9 +178,10 @@ export default {
       this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
 
       const ivoUserService = new IvoUserService(),
-        response = await ivoUserService.criarAcessoAluno(
+        response = await ivoUserService.mudarSenhaAluno(
           JSON.stringify({
             password: data.senha,
+            confirm_password: data.senha,
           }),
           data.pk
         );
