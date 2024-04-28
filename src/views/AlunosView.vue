@@ -120,7 +120,6 @@ export default {
       toastData: {
         header: "",
         body: "",
-        textBg: "",
       },
       btnCriarAcesso: {
         text: "Confirmar",
@@ -196,7 +195,6 @@ export default {
 
           this.toastData.header = "Criar Acesso";
           this.toastData.body = "Senha próvisória criada com sucesso!";
-          this.toastData.textBg = "text-bg-primary";
           Toast.getOrCreateInstance(
             document.querySelector("#liveToast")
           ).show();
