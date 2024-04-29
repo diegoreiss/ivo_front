@@ -90,6 +90,7 @@ export default {
         break;
       case 200:
         this.user.role = response.json.role;
+        this.user.firstName = response.json.first_name;
         break;
       default:
         break;
