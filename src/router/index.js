@@ -76,6 +76,15 @@ const routes = [
         path: 'chat',
         name: 'home.chat',
         component: ChatView,
+        props: true,
+        beforeEnter: async (to) => {
+          const ivoUserService = new IvoUserService(),
+            response = await ivoUserService.getCurrentUser();
+          
+          to.params.userUuid = response.json.uuid;
+
+          return true;
+        }
       },
       {
         path: 'relatorios',
