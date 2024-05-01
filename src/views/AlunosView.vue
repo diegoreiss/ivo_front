@@ -11,8 +11,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="aluno in alunos" :key="aluno.pk">
-          <td class="d-none">{{ aluno.pk }}</td>
+        <tr v-for="(aluno, index) in alunos" :key="index">
           <td>{{ aluno.first_name }} {{ aluno.last_name }}</td>
           <td>{{ aluno.email }}</td>
           <td v-if="aluno.is_active">
@@ -21,7 +20,7 @@
           <td v-else><i class="bi bi-x-square-fill text-danger"></i></td>
           <td v-if="!aluno.is_active">
             <button
-              @click="criarAcessoModal(aluno.pk, aluno.first_name, aluno.email)"
+              @click="criarAcessoModal(aluno.uuid, aluno.first_name, aluno.email)"
               type="button"
               class="btn btn-primary"
             >
@@ -65,7 +64,7 @@
                   required
                 />
                 <input type="hidden" name="emailAluno" />
-                <input type="hidden" name="pkAluno" />
+                <input type="hidden" name="uuidAluno" />
               </div>
               <div>
                 <strong>OBS:</strong>
@@ -148,13 +147,13 @@ export default {
           break;
       }
     },
-    criarAcessoModal(pk, firstName, email) {
+    criarAcessoModal(uuid, firstName, email) {
       const exampleModal = document.querySelector("#exampleModal");
       exampleModal.querySelector(
         'input[type="hidden"][name="emailAluno"]'
       ).value = email;
-      exampleModal.querySelector('input[type="hidden"][name="pkAluno"]').value =
-        pk;
+      exampleModal.querySelector('input[type="hidden"][name="uuidAluno"]').value =
+        uuid;
       exampleModal.querySelector(
         ".modal-title"
       ).innerHTML = `Criar acesso para ${firstName}`;
@@ -163,7 +162,7 @@ export default {
     async criarAcesso() {
       const exampleModal = document.querySelector("#exampleModal"),
         data = {
-          pk: exampleModal.querySelector('input[type="hidden"][name="pkAluno"]')
+          uuid: exampleModal.querySelector('input[type="hidden"][name="uuidAluno"]')
             .value,
           email: exampleModal.querySelector(
             'input[type="hidden"][name="emailAluno"]'
@@ -183,7 +182,7 @@ export default {
             password: data.senha,
             confirm_password: data.senha,
           }),
-          data.pk
+          data.uuid
         );
 
       switch (response.status_code) {

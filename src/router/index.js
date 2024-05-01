@@ -41,7 +41,7 @@ const routes = [
             response = await ivoUserService.getCurrentUser();
           
           if (response.json.role === 2 && !response.json.is_password_changed) {
-            to.params.userId = response.json.pk;
+            to.params.userUuid = response.json.uuid;
             return true;
           } else {
             return { name: 'HomePage' }

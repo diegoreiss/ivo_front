@@ -21,7 +21,7 @@ export default class IvoUserService {
     return new CustomDataResponse(request.status, await request.json());
   }
 
-  async mudarSenhaAluno(body, id, path = `/${id}/role/aluno/update/password`, method = 'PATCH') {
+  async mudarSenhaAluno(body, uuid, path = `/${uuid}/role/aluno/update/password`, method = 'PATCH') {
     const request = await fetch(`${process.env.VUE_APP_IVO_API_URL}${IvoUserService.endpoint}${path}`, {
       method,
       headers: {

@@ -14,9 +14,6 @@
           />
           <label for="password1">Senha</label>
         </div>
-        <div class="form-floating d-none">
-          <input type="hidden" name="userId" id="userId" :value="userId">
-        </div>
         <div class="form-floating">
           <input
             type="password"
@@ -78,7 +75,7 @@ export default {
     };
   },
   props: {
-    userId: Object,
+    userUuid: Object,
   },
   methods: {
     async trocarSenha(event) {
@@ -91,7 +88,7 @@ export default {
         response = await ivoUserservice.mudarSenhaAluno(JSON.stringify({
           password: this.data.password,
           confirm_password: this.data.confirmPassword,
-        }), this.userId);
+        }), this.userUuid);
       
       switch (response.status_code) {
         case 200:
