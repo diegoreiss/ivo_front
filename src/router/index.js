@@ -8,6 +8,10 @@ import AlunosView from "@/views/AlunosView.vue";
 import PendenciasView from "@/views/PendenciasView.vue";
 import ChatView from "../views/ChatView.vue";
 import RelatoriosView from "@/views/RelatoriosView.vue";
+import TreinamentoView from "@/views/TreinamentoView.vue";
+import IntencoesView from "@/views/treinamento/IntencoesView.vue";
+import RespostasView from "@/views/treinamento/RespostasView.vue";
+import DialogosView from "@/views/treinamento/DialogosView.vue";
 
 const routes = [
   {
@@ -58,6 +62,7 @@ const routes = [
     path: '/home',
     name: 'HomePage',
     component: HomePageView,
+    redirect: '/home/pendencias',
     meta: {
       requireAuth: true,
     },
@@ -90,6 +95,28 @@ const routes = [
         path: 'relatorios',
         name: 'home.relatorios',
         component: RelatoriosView,
+      },
+      {
+        path: 'treinamento',
+        name: 'home.treinamento',
+        component: TreinamentoView,
+        children: [
+          {
+            path: 'intencoes',
+            name: 'treinamento.intencoes',
+            component: IntencoesView
+          },
+          {
+            path: 'respostas',
+            name: 'treinamento.respostas',
+            component: RespostasView,
+          },
+          {
+            path: 'dialogos',
+            name: 'treinamento.dialogos',
+            component: DialogosView,
+          },
+        ]
       }
     ],
   },
