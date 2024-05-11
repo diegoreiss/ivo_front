@@ -11,7 +11,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(aluno, index) in alunos" :key="index">
+        <tr v-for="(aluno, index) in alunos.results" :key="index">
           <td>{{ aluno.first_name }} {{ aluno.last_name }}</td>
           <td>{{ aluno.email }}</td>
           <td v-if="aluno.is_active">
