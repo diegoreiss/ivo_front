@@ -21,13 +21,41 @@ export default class BotService {
     return new CustomDataResponse(response.status, await response.json());
   }
 
-  async createIntent(path = `/intent`, method = 'POST') {
+  async getIntentByName(intent, path = `/intent/${intent}`, method = 'GET') {
     const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
       method,
       headers: {
         Accept: 'application/json',
         Authorization: `Bearer ${this.cookie}`,
       }
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async createIntent(body, path = `/intent/`, method = 'POST') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+      body,
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async editIntentExamples(body, intent, path = `/intent/${intent}/change/examples`, method = 'PATCH') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+      body
     });
 
     return new CustomDataResponse(response.status, await response.json());
