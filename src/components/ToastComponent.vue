@@ -24,10 +24,20 @@
 </template>
 
 <script>
+import { Toast } from 'bootstrap';
+
 export default {
   name: "ToastComponent",
+  data() {},
   props: {
     toastData: Object,
   },
+  methods: {
+    showToast() {
+      const toastDom = document.querySelector('#liveToast');
+      toastDom.classList.add(this.toastData.bg);
+      Toast.getOrCreateInstance(toastDom).show();
+    }
+  }
 };
 </script>
