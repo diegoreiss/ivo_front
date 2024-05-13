@@ -1,8 +1,5 @@
 <template>
   <div class="pageBody m-3">
-    <button type="button" class="btn btn-secondary mb-3">
-      Salvar Mudanças
-    </button>
     <div id="intentContainer" class="d-flex">
       <div id="intentCard" class="card me-2">
         <div
@@ -13,17 +10,17 @@
             <button
               type="button"
               class="btn btn-sm btn-outline-primary"
-              @click="showModalAddIntent('add')"
+              @click="showModalAddIntent"
             >
               Adicionar Intenção
             </button>
-            <button
+            <!-- <button
               type="button"
               class="btn btn-sm btn-outline-secondary"
-              @click="showModalAddIntent('edit')"
+              @click="showModalEditIntent"
             >
               Editar Selecionado
-            </button>
+            </button> -->
           </div>
           <div
             class="modal fade"
@@ -36,10 +33,7 @@
               <div class="modal-content">
                 <div class="modal-header">
                   <h1 class="modal-title fs-5" id="modalAddIntentLabel">
-                    {{
-                      createIntent.mode === "add" ? "Adicionar" : "Editar"
-                    }}
-                    Intenção
+                    Adicionar Intenção
                   </h1>
                   <button
                     type="button"
@@ -79,9 +73,60 @@
               </div>
             </div>
           </div>
+          <div
+            class="modal fade"
+            id="modalEditIntent"
+            tabindex="-1"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="exampleModalLabel">
+                    Editar Intenção
+                  </h1>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label for="intent-name" class="col-form-label"
+                      >Nome:</label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="intent-name"
+                      v-model="editIntentObj.inputValue"
+                    />
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    @click="editIntent"
+                    type="button"
+                    class="btn btn-primary"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div id="intentsList" class="list-group overflow-y-scroll">
+        <div class="card-body overflow-y-scroll">
+          <div id="intentsList" class="list-group">
             <button
               v-for="(intent, index) in this.nlu.intents"
               :key="index"
@@ -104,7 +149,7 @@
           <span class="headerName">
             {{ nlu.currentIntent.intent }}
           </span>
-          <div class="headerButton">
+          <div class="headerButton d-flex gap-1">
             <button
               @click="addExampleInput"
               type="button"
@@ -112,25 +157,40 @@
             >
               Adicionar Exemplo
             </button>
+            <button
+              @click="saveChangesExamples"
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+            >
+              Salvar Mudanças
+            </button>
           </div>
         </div>
         <div class="card-body overflow-y-scroll">
           <div
             v-for="(example, index) in nlu.currentIntent.examples"
             :key="index"
-            class="input-group mb-3"
+            class="inputExample d-flex gap-2"
           >
-            <span class="input-group-text" id="basic-addon1">-</span>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Exemplo"
-              aria-label="Exemplo"
-              aria-describedby="basic-addon1"
-              :value="example"
-              @focus="examples.currentExampleIndex = index"
-              @keyup.enter="editExample($event)"
-            />
+            <div class="input-group mb-3">
+              <span class="input-group-text" id="basic-addon1">-</span>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Exemplo"
+                aria-label="Exemplo"
+                aria-describedby="basic-addon1"
+                :value="example"
+                @focus="examples.currentExampleIndex = index"
+                @input="editExample($event, index)"
+              />
+            </div>
+            <button
+              @click="deleteExample(index)"
+              type="button"
+              class="btn-close mt-2"
+              aria-label="Close"
+            ></button>
           </div>
         </div>
       </div>
@@ -143,6 +203,7 @@
         @onPageChange="changePage"
       />
     </div>
+    <ToastComponent ref="toastComponent" :toastData="toast" />
   </div>
 </template>
 
@@ -150,17 +211,21 @@
 import PaginationComponent from "@/components/PaginationComponent.vue";
 import BotService from "@/services/ivo/bot/BotService";
 import { Modal } from "bootstrap";
+import ToastComponent from "@/components/ToastComponent.vue";
 
 export default {
   name: "IntencoesView",
   components: {
     PaginationComponent,
+    ToastComponent,
   },
   data() {
     return {
       nlu: {
         intents: [],
         currentIntent: {},
+        intentsCreated: [],
+        intentsEdited: [],
       },
       pagination: {
         activeItem: 0,
@@ -172,9 +237,18 @@ export default {
         modal: Object,
         mode: "add",
       },
+      editIntentObj: {
+        inputValue: "",
+        modal: Object,
+      },
       examples: {
         currentExampleIndex: Number,
         currentExample: "",
+      },
+      toast: {
+        header: "header",
+        body: "body",
+        bg: "bg",
       },
     };
   },
@@ -184,6 +258,9 @@ export default {
   mounted() {
     this.createIntent.modal = new Modal(
       document.querySelector("#modalAddIntent")
+    );
+    this.editIntentObj.modal = new Modal(
+      document.querySelector("#modalEditIntent")
     );
   },
   methods: {
@@ -211,58 +288,92 @@ export default {
       this.pagination.activeItem = 0;
       this.getAllIntents();
     },
-    addIntent() {
+    async addIntent() {
       this.createIntent.inputValue = this.createIntent.inputValue.trim();
+      const botService = new BotService(),
+        intent = await botService.getIntentByName(this.createIntent.inputValue);
+
+      if (intent.status_code === 200) {
+        this.createIntent.inputValue = "";
+        this.createIntent.modal.hide();
+        this.toast.header = "Adicionar Intenção";
+        this.toast.body = "Essa inteção já existe!";
+        this.toast.bg = "text-bg-danger";
+        this.$refs.toastComponent.showToast();
+        return;
+      }
 
       if (!this.createIntent.inputValue) return;
 
-      if (this.createIntent.mode === "edit") {
-        this.nlu.currentIntent.intent = this.createIntent.inputValue;
-        this.createIntent.mode = "add";
-        this.createIntent.inputValue = "";
-        this.createIntent.modal.hide();
-        return;
-      }
-
-      this.nlu.intents.push({
+      const newIntent = {
         intent: this.createIntent.inputValue,
         examples: [],
-      });
+      };
+
+      this.nlu.intents.push(newIntent);
+      this.nlu.intentsCreated.push(newIntent);
       this.createIntent.inputValue = "";
       this.createIntent.modal.hide();
-    },
-    showModalAddIntent(mode) {
-      this.createIntent.mode = mode;
 
-      if (this.createIntent.mode === "edit") {
-        this.createIntent.inputValue = this.nlu.currentIntent.intent;
+      console.log("chamada api");
+
+      const newIntentCopy = { ...newIntent };
+      newIntentCopy.examples = newIntentCopy.examples.join("\n");
+
+      const response = await botService.createIntent(
+        JSON.stringify(newIntentCopy)
+      );
+      console.log(response.json);
+    },
+    async editIntent() {
+      this.editIntentObj.inputValue = this.editIntentObj.inputValue.trim();
+      const intent = await this.getIntentByName(this.editIntentObj.inputValue);
+
+      if (intent.status_code === 200) {
+        this.editIntentObj.modal.hide();
+        this.toast.header = "Editar Intenção";
+        this.toast.body = "Essa inteção já existe!";
+        this.toast.bg = "text-bg-danger";
+        this.$refs.toastComponent.showToast();
+        return;
       }
 
+      this.nlu.currentIntent.intent = this.editIntentObj.inputValue;
+      this.editIntentObj.modal.hide();
+    },
+    showModalAddIntent() {
       this.createIntent.modal.show();
     },
+    showModalEditIntent() {
+      this.editIntentObj.inputValue = this.nlu.currentIntent.intent;
+      this.editIntentObj.modal.show();
+    },
     addExampleInput() {
-      if (this.nlu.currentIntent.examples.length === 0) {
-        this.nlu.currentIntent.examples.push("");
-        return;
-      }
-      if (
-        !this.nlu.currentIntent.examples[
-          this.nlu.currentIntent.examples.length - 1
-        ]
-      )
-        return;
-
       this.nlu.currentIntent.examples.push("");
     },
-    addExample(event) {
-      this.nlu.currentIntent.examples[
-        this.nlu.currentIntent.examples.length - 1
-      ] = event.target.value.trim();
+    editExample(event, index) {
+      this.nlu.currentIntent.examples[index] = event.target.value.trim();
     },
-    editExample(event) {
-      console.log('to editando');
-      this.nlu.currentIntent.examples[this.examples.currentExampleIndex] =
-        event.target.value.trim();
+    deleteExample(index) {
+      this.nlu.currentIntent.examples.splice(index, 1);
+    },
+    async saveChangesExamples() {
+      const currentIntentCopy = { ...this.nlu.currentIntent };
+      currentIntentCopy.examples = currentIntentCopy.examples
+        .filter((e) => e !== "")
+        .map((e) => e.trim());
+
+      const examplesJoined =
+          currentIntentCopy.examples.map((e) => `- ${e}`).join("\n") + "\n",
+        body = JSON.stringify({
+          examples: examplesJoined,
+        }),
+        botService = new BotService(),
+        response = await botService.editIntentExamples(body, currentIntentCopy.intent);
+
+      console.log(response);
+
+      this.nlu.currentIntent.examples = currentIntentCopy.examples;
     },
   },
 };
@@ -275,12 +386,12 @@ export default {
 
 #intentExamplesCard {
   min-width: 49%;
-  height: calc(100vh - 195px);
+  height: calc(100vh - 145px);
 }
 
 #intentCard {
   min-width: 50%;
-  height: calc(100vh - 195px);
+  height: calc(100vh - 145px);
 }
 
 #intentsList {
