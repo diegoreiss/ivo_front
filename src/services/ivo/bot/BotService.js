@@ -21,6 +21,30 @@ export default class BotService {
     return new CustomDataResponse(response.status, await response.json());
   }
 
+  async getAllIntentsNames(path = `/intent/names`, method = 'GET') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      }
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async getAllAvailalbeIntentsNames(path = '/intent/names/available', method = 'GET') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      }
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
   async getIntentByName(intent, path = `/intent/${intent}`, method = 'GET') {
     const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
       method,
@@ -68,6 +92,33 @@ export default class BotService {
         Accept: 'application/json',
         Authorization: `Bearer ${this.cookie}`,
       },
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async createResponse(body, path = '/response/', method = 'POST') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+      body
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+  async editResponseTexts(body, responseName, path = `/response/${responseName}/change/texts/`, method = 'PATCH') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+      body
     });
 
     return new CustomDataResponse(response.status, await response.json());
