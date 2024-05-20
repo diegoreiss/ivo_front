@@ -35,9 +35,9 @@
                 </div>
               </div>
             </div>
-            <div class="modal-body overflow-y-auto">
+            <div id="modalMensagens" class="modal-body" v-chat-scroll>
               <div class="msg-body">
-                <ul class="pe-4">
+                <ul id="listMessages" class="pe-4">
                   <li
                     v-for="(message, index) in messages"
                     :key="index"
@@ -49,7 +49,7 @@
                   >
                     <div
                       id="message-text"
-                      class="fs-6 p-3 lh-base fw-normal d-inline-block rounded"
+                      class="fs-6 p-3 lh-base fw-normal d-inline-block rounded message-box-item"
                       :class="{
                         'text-dark bg-secondary bg-opacity-10 scale-up-hor-left':
                           message.sender,
@@ -104,7 +104,7 @@
 </template>
 
 <script>
-import RasaRestService from "@/services/rasa/rest/RasaRestService";
+import BotService from "@/services/ivo/bot/BotService";
 
 export default {
   name: "ChatView",
@@ -114,13 +114,13 @@ export default {
         enabled: true,
       },
       messages: [
-        {
-          type: "chatbot",
-          content: "Oi eu sou o ivo",
-          sender: true,
-          spinnerLoading: false,
-        },
-        { type: "chatbot", content: "Bom dia!", sender: false },
+        // {
+        //   type: "chatbot",
+        //   content: "Oi eu sou o ivo",
+        //   sender: true,
+        //   spinnerLoading: false,
+        // },
+        // { type: "chatbot", content: "Bom dia!", sender: false },
       ],
       newMessage: "",
     };
@@ -134,6 +134,9 @@ export default {
     },
     async sendMessage(event) {
       event.preventDefault();
+
+      if (!this.newMessage) return;
+
       this.messages.push({
         content: this.newMessage,
         sender: false,
@@ -147,13 +150,15 @@ export default {
 
       this.formMessage.enabled = false;
       const lastMessage = this.getLastMessage(),
-        rasaRestService = new RasaRestService(),
-        response = await rasaRestService.restInput(
+        botService = new BotService(),
+        response = await botService.sendMessageToBot(
           JSON.stringify({
             sender: `user_${this.userUuid}`,
             message: this.newMessage,
           })
         );
+      
+      console.log(response);
 
       response.json.forEach((message, index) => {
         if (index === 0) {

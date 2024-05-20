@@ -175,5 +175,19 @@ export default class BotService {
 
       return new CustomDataResponse(response.status, await response.json());
   }
+
+  async sendMessageToBot(body, path = '/message/', method = 'POST') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.cookie}`,
+        },
+        body
+      });
+
+      return new CustomDataResponse(response.status, await response.json());
+  }
 }
 
