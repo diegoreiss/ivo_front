@@ -65,13 +65,25 @@
                       ></div>
                       <span class="message-text-content text-break">{{ message.content }}</span>
                     </div>
+                    <div v-if="message.buttons" class="mt-2">
+                      <div class="button-options-container d-flex justify-content-start align-items-center gap-3">
+                        <button 
+                          @click="escolherOpcaoBot(button.payload)"
+                          v-for="(button, index) in message.buttons" 
+                          :key="index" 
+                          class="btn btn-sm btn-secondary"
+                        >
+                          {{ button.title }}
+                        </button>
+                      </div>
+                    </div>
                   </li>
                 </ul>
               </div>
             </div>
             <div class="send-box p-3 border-top">
-              <form
-                @submit="sendMessage($event)"
+              <div
+                @click="sendMessage()"
                 action=""
                 class="d-flex gap-3 w-100 align-items-center justify-content-between"
                 autocomplete="off"
@@ -84,7 +96,9 @@
                   id="inputMessage"
                   aria-label="mensagem..."
                   placeholder="Escreva uma mensagem..."
+                  autocomplete="off"
                   :disabled="!formMessage.enabled"
+                  @keyup.enter="sendMessage()"
                 />
                 <button
                   :disabled="!formMessage.enabled"
@@ -94,7 +108,7 @@
                   <i class="bi bi-send-plus-fill me-2"></i>
                   Enviar
                 </button>
-              </form>
+              </div>
             </div>
           </div>
         </div>
@@ -113,15 +127,7 @@ export default {
       formMessage: {
         enabled: true,
       },
-      messages: [
-        // {
-        //   type: "chatbot",
-        //   content: "Oi eu sou o ivo",
-        //   sender: true,
-        //   spinnerLoading: false,
-        // },
-        // { type: "chatbot", content: "Bom dia!", sender: false },
-      ],
+      messages: [],
       newMessage: "",
     };
   },
@@ -132,9 +138,7 @@ export default {
     getLastMessage() {
       return this.messages[this.messages.length - 1];
     },
-    async sendMessage(event) {
-      event.preventDefault();
-
+    async sendMessage() {
       if (!this.newMessage) return;
 
       this.messages.push({
@@ -162,12 +166,19 @@ export default {
 
       response.json.forEach((message, index) => {
         if (index === 0) {
+          if (message.buttons) {
+            lastMessage['buttons'] = message.buttons;
+            this.formMessage.enabled = false;
+          }
           lastMessage.content = message.text;
+
         } else {
-          this.messages.push({
+          const botMessage = {
             content: message.text,
-            sender: true,
-          })
+            sender: true
+          }
+
+          this.messages.push(botMessage);
         }
       });
 
@@ -175,6 +186,12 @@ export default {
       lastMessage.spinnerLoading = false;
       this.formMessage.enabled = true;
     },
+    escolherOpcaoBot(opcao) {
+      console.log('cliquei');
+      console.log(opcao);
+      this.newMessage = opcao;
+      this.sendMessage();
+    }
   },
 };
 </script>

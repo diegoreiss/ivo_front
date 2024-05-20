@@ -52,8 +52,6 @@ import ModalAdviceComponent from "@/components/ModalAdviceComponent.vue";
 import router from "@/router";
 import IvoTokenService from "@/services/ivo/token/IvoTokenService";
 
-//import router from '@/router';
-
 export default {
   name: "LoginView",
   data() {
