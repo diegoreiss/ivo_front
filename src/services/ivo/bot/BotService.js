@@ -97,6 +97,18 @@ export default class BotService {
     return new CustomDataResponse(response.status, await response.json());
   }
 
+  async getAllResponsesNames(path = `/response/names/`, method = 'GET') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
   async createResponse(body, path = '/response/', method = 'POST') {
     const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
       method,
@@ -122,6 +134,46 @@ export default class BotService {
     });
 
     return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async getAllStories(path = '/stories/' , method = 'GET') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      }
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async createStory(body, path = '/stories/' , method = 'POST') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.cookie}`,
+      },
+      body
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
+
+  async editStorySteps(body, story, path = `/stories/${story}/change/steps/`, method = 'PATCH') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${BotService.endpoint}${path}`, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.cookie}`,
+        },
+        body
+      });
+
+      return new CustomDataResponse(response.status, await response.json());
   }
 }
 
