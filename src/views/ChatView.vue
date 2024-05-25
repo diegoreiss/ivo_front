@@ -129,7 +129,30 @@ export default {
       },
       messages: [],
       newMessage: "",
+      chatSocket: null,
     };
+  },
+  mounted() {
+    console.log(window.location.host);
+    this.chatSocket = new WebSocket(`ws://localhost:8000/ws/chat/${this.userUuid}/`);
+
+    this.chatSocket.onopen = () => {
+      console.info('Websocket connection opened :)');
+    };
+
+    this.chatSocket.onclose = () => {
+      console.info('Websocket Closed');
+    };
+
+    this.chatSocket.oneerror = (error) => {
+      console.error(`Websocket error >>: ${error}`);
+    };
+  },
+  beforeRouteLeave() {
+    if (this.chatSocket) {
+      this.chatSocket.close();
+      this.chatSocket = null;
+    }
   },
   props: {
     userUuid: String,
