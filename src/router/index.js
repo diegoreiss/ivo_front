@@ -1,5 +1,17 @@
 import { createRouter, createWebHistory } from "vue-router";
 import cookieUtils from "@/utils/cookieUtils";
+import IvoUserService from "@/services/ivo/user/IvoUserService";
+import LoginView from "../views/LoginView.vue";
+import MudarSenhaView from "@/views/MudarSenhaView.vue";
+import HomePageView from "@/views/HomePageView.vue";
+import AlunosView from "@/views/AlunosView.vue";
+import PendenciasView from "@/views/PendenciasView.vue";
+import ChatView from "../views/ChatView.vue";
+import RelatoriosView from "@/views/RelatoriosView.vue";
+import TreinamentoView from "@/views/TreinamentoView.vue";
+import IntencoesView from "@/views/treinamento/IntencoesView.vue";
+import RespostasView from "@/views/treinamento/RespostasView.vue";
+import DialogosView from "@/views/treinamento/DialogosView.vue";
 
 const routes = [
   {
@@ -8,39 +20,127 @@ const routes = [
     redirect: '/auth/login',
   },
   {
-    path: '/home',
-    name: 'HomePage',
-    meta: {
-      requiresAuth: true
-    },
-    component: () => import(/* webpackChunkName: "homepage" */ '../views/HomePageView.vue'),
-    children: [{
-      path: 'alunos',
-      name: 'home.alunos',
-      meta: {
-        requiredRole: 'admin',
+    path: '/auth',
+    name: 'login',
+    children: [
+      {
+        path: 'login',
+        name: 'auth.login',
+        component: LoginView,
+        meta: {
+          requireAuth: false,
+        }
       },
-      component: () => import(/* webpackChunkName: "alunos" */ '../views/AlunosView.vue'),
-    }, {
-      path: 'pendencias',
-      name: 'home.pendencias',
-      component: () => import(/* webpackChunkName: "pendencias" */ '../views/PendenciasView.vue'),
-    }, {
-      path: 'chat',
-      name: 'home.chat',
-      component: () => import(/* webpackChunkName: "conversas" */ '../views/ChatView.vue'),
-    }, {
-      path: 'relatorios',
-      name: 'home.relatorios',
-      component: () => import(/* webpackChunkName: "relatorios" */ '../views/RelatoriosView.vue'),
-    }],
+      {
+        path: 'mudarsenha',
+        name: 'auth.mudarsenha',
+        props: true,
+        beforeEnter: async (to) => {
+          const isAuth = await isAuthenticated();
+          if (!isAuth) {
+            return { name: 'auth.login' };
+          }
+
+          const ivoUserService = new IvoUserService(),
+            response = await ivoUserService.getCurrentUser();
+          
+          if (response.json.role === 2 && !response.json.is_password_changed) {
+            to.params.userUuid = response.json.uuid;
+            return true;
+          } else {
+            return { name: 'HomePage' }
+          }
+        },
+        component: MudarSenhaView,
+        meta: {
+          requireAuth: true,
+        },
+      }
+    ]
   },
   {
-    path: '/auth/login',
-    name: 'LoginView',
-    component: () => import(/* webpackChunkName: "login" */ '../views/LoginView.vue'),
+    path: '/home',
+    name: 'HomePage',
+    component: HomePageView,
+    redirect: '/home/pendencias',
+    meta: {
+      requireAuth: true,
+    },
+    children: [
+      {
+        path: 'alunos',
+        name: 'home.alunos',
+        component: AlunosView,
+      },
+      {
+        path: 'pendencias',
+        name: 'home.pendencias',
+        component: PendenciasView,
+      },
+      {
+        path: 'chat',
+        name: 'home.chat',
+        component: ChatView,
+        props: true,
+        beforeEnter: async (to) => {
+          const ivoUserService = new IvoUserService(),
+            response = await ivoUserService.getCurrentUser();
+          
+          to.params.userUuid = response.json.uuid;
+
+          return true;
+        }
+      },
+      {
+        path: 'relatorios',
+        name: 'home.relatorios',
+        component: RelatoriosView,
+      },
+      {
+        path: 'treinamento',
+        name: 'home.treinamento',
+        component: TreinamentoView,
+        children: [
+          {
+            path: 'intencoes',
+            name: 'treinamento.intencoes',
+            component: IntencoesView
+          },
+          {
+            path: 'respostas',
+            name: 'treinamento.respostas',
+            component: RespostasView,
+          },
+          {
+            path: 'dialogos',
+            name: 'treinamento.dialogos',
+            component: DialogosView,
+          },
+        ]
+      }
+    ],
   },
 ]
+
+async function isAuthenticated() {
+  const ivoUserService = new IvoUserService(),
+    response = await ivoUserService.getCurrentUser();
+  
+  console.log(response.json);
+
+  switch (response.status_code) {
+    case 401:
+    case 403:
+      cookieUtils.deleteCookie('ivo_access_token');
+      cookieUtils.deleteCookie('ivo_refresh_token');
+
+      return false;
+    case 200:
+      return true;
+    default:
+      return false;
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
@@ -48,32 +148,15 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-  if (to.path === '/auth/login') return;
-
-  const auth = cookieUtils.getCookie('ivo_access_token');
-
-  if (!auth) return { name: 'LoginView' };
-
-  const res = await fetch(`${process.env.VUE_APP_IVO_API_URL}/user/current/`, {
-    headers: {
-      Authorization: `Bearer ${auth}`,
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-  }).then((response) => {
-    switch (response.status) {
-      case 200:
-        return response.json();
-      default:
-        return response.status;
-    }
-  });
-
-  if (res === 401 || res === 403) {
-    cookieUtils.deleteCookie('ivo_access_token');
-    cookieUtils.deleteCookie('ivo_refresh_token');
-    return { name: 'LoginView' };
-  } 
+  if (!to.meta.requireAuth) {
+    return;
+  }
+  if (!isAuthenticated() && to.name !== 'auth.login') {
+    return { name: 'auth.login' };
+  }
+  if (to.meta.requireAuth && to.name === 'auth.mudarsenha') {
+    return;
+  }
 });
 
 export default router;

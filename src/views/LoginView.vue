@@ -25,13 +25,18 @@
           />
           <label for="floatingPassword">Senha</label>
         </div>
-        <button class="btn text-white w-100 py-2 my-2" type="submit">
+        <button
+          class="btn text-white w-100 py-2 my-2"
+          type="submit"
+          :disabled="btnLogin.disabled"
+        >
           <span
             id="spinner"
-            class="spinner-border spinner-border-sm me-2 d-none"
+            class="spinner-border spinner-border-sm me-2"
             aria-hidden="true"
+            v-show="btnLogin.spinner"
           ></span>
-          <span role="status">Entrar</span>
+          <span role="status">{{ btnLogin.text }}</span>
         </button>
         <p class="mt-2 mb-3 text-body-secondary">© 2024</p>
       </form>
@@ -45,8 +50,7 @@ import { Modal } from "bootstrap";
 import cookieUtils from "@/utils/cookieUtils";
 import ModalAdviceComponent from "@/components/ModalAdviceComponent.vue";
 import router from "@/router";
-
-//import router from '@/router';
+import IvoTokenService from "@/services/ivo/token/IvoTokenService";
 
 export default {
   name: "LoginView",
@@ -58,64 +62,48 @@ export default {
         title: "",
         body: "",
       },
+      btnLogin: {
+        text: "Entrar",
+        spinner: false,
+        disabled: false,
+      },
     };
   },
   components: {
     ModalAdviceComponent,
   },
   methods: {
-    getAccessToken(event) {
+    async getAccessToken(event) {
       event.preventDefault();
 
-      const buttonTypeSubmitDOM = document
-        .querySelector(".form-signin")
-        .querySelector('button[type="submit"]');
+      this.btnLogin.text = "Carregando...";
+      this.btnLogin.spinner = !this.btnLogin.spinner;
+      this.btnLogin.disabled = !this.btnLogin.disabled;
 
-      buttonTypeSubmitDOM.querySelector('span[role="status"]').innerHTML =
-        "Carregando...";
-      buttonTypeSubmitDOM.querySelector("#spinner").classList.toggle("d-none");
-
-      const data = {
+      const body = JSON.stringify({
         username: this.username,
         password: this.password,
-      };
+      });
 
-      fetch(`${process.env.VUE_APP_IVO_API_URL}/token/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(data),
-      })
-        .then((response) => {
-          buttonTypeSubmitDOM.querySelector('span[role="status"]').innerHTML =
-            "Entrar";
-          buttonTypeSubmitDOM
-            .querySelector("#spinner")
-            .classList.toggle("d-none");
-          switch (response.status) {
-            case 401:
-              this.modalData.title = "Login";
-              this.modalData.body = "Credenciais Inválidas";
-              new Modal(document.querySelector("#exampleModal")).show();
-              break;
-            case 200:
-              return response.json();
-            default:
-              break;
-          }
-        })
-        .then((data) => {
-          if (!data) return;
-
-          cookieUtils.setCookie("ivo_access_token", data.access);
-          cookieUtils.setCookie("ivo_refresh_token", data.refresh);
-          router.push({ name: "HomePage" });
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      const ivoTokenService = new IvoTokenService();
+      const response = await ivoTokenService.getAccessToken(body);
+      switch (response.status_code) {
+        case 401:
+          this.modalData.title = "Login";
+          this.modalData.body = "Credenciais Inválidas";
+          this.btnLogin.text = "Entrar";
+          new Modal(document.querySelector("#exampleModal")).show();
+          this.btnLogin.spinner = !this.btnLogin.spinner;
+          this.btnLogin.disabled = !this.btnLogin.disabled;
+          break;
+        case 200:
+          cookieUtils.setCookie("ivo_access_token", response.json.access);
+          cookieUtils.setCookie("ivo_refresh_token", response.json.refresh);
+          router.push({ name: "auth.mudarsenha" });
+          break;
+        default:
+          break;
+      }
     },
   },
 };
