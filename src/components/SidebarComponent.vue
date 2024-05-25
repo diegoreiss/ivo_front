@@ -14,37 +14,20 @@
     </a>
     <hr />
     <ul id="navbarListLinks" class="nav nav-pills flex-column mb-auto">
-      <li @click="activeLink($event)" class="nav-item">
-        <router-link to="/home/pendencias">
-          <span class="nav-link text-white d-flex justify-content-start align-items-center gap-3">
-            <i class="bi bi-clipboard-data"></i>
-            Pendências
-          </span>
-        </router-link>
+      <li class="nav-item">
+        <SidebarLinkComponent :to="'/home/pendencias'" :name="'Pendências'" :icon="'bi bi-clipboard-data'" />
       </li>
-      <li @click="activeLink($event)" class="nav-item">
-        <router-link to="/home/chat">
-          <span class="nav-link text-white d-flex justify-content-start align-items-center gap-3">
-            <i class="bi bi-chat-left-text"></i>
-            Chat
-          </span>
-        </router-link>
+      <li class="nav-item">
+        <SidebarLinkComponent :to="'/home/chat'" :name="'Chat'" :icon="'bi bi-chat-left-text'" />
       </li>
-      <li @click="activeLink($event)" class="nav-item" v-if="user.role === 1">
-        <router-link to="/home/alunos">
-          <span class="nav-link text-white d-flex justify-content-start align-items-center gap-3" aria-current="page">
-            <i class="bi bi-people"></i>
-            Alunos
-          </span>
-        </router-link>
+      <li class="nav-item" v-if="user.role === 1">
+        <SidebarLinkComponent :to="'/home/alunos'" :name="'Alunos'" :icon="'bi bi-people'" />
       </li>
-      <li @click="activeLink($event)" class="nav-item" v-if="user.role === 1">
-        <router-link to="/home/relatorios">
-          <span class="nav-link text-white d-flex justify-content-start align-items-center gap-3">
-            <i class="bi bi-speedometer2"></i>
-            Relatórios
-          </span>
-        </router-link>
+      <li class="nav-item" v-if="user.role === 1">
+        <SidebarLinkComponent :to="'/home/relatorios'" :name="'Relatórios'" :icon="'bi-speedometer2'" />
+      </li>
+      <li class="nav-item" v-if="user.role === 1">
+        <SidebarLinkComponent :to="'/home/treinamento'" :name="'Treinamento'" :icon="'bi bi-robot'" />
       </li>
     </ul>
     <hr />
@@ -66,10 +49,15 @@
 
 <script>
 import router from '@/router';
+import IvoUserService from '@/services/ivo/user/IvoUserService';
 import cookieUtils from '@/utils/cookieUtils';
+import SidebarLinkComponent from './SidebarLinkComponent.vue';
 
 export default {
   name: 'SidebarComponent',
+  components: {
+    SidebarLinkComponent
+  },
   data() {
     return {
       user: {
@@ -78,32 +66,28 @@ export default {
       },
     }
   },
-  created() {
-    const auth = cookieUtils.getCookie('ivo_access_token');
-    fetch(`${process.env.VUE_APP_IVO_API_URL}/user/current/`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth}`,
-      },
-    }).then((response) => {
-      switch(response.status) {
-        case 200:
-          return response.json();
-        case 401:
-          router.push({ name: 'LoginView' });
-      }
-    }).then((data) => {
-      this.user.firstName = data.first_name;
-      this.user.role = data.role;
-      console.log(data);
-    });
+  async created() {
+    const ivoUserService = new IvoUserService(),
+      response = await ivoUserService.getCurrentUser();
+    
+    switch (response.status_code) {
+      case 401:
+      case 403:
+        router.push({ name: 'auth.login' })
+        break;
+      case 200:
+        this.user.role = response.json.role;
+        this.user.firstName = response.json.first_name;
+        break;
+      default:
+        break;
+    }
+
   },
   mounted() {
-    this.$nextTick(function() {
-      document.querySelector('#navbarListLinks').querySelector('li').querySelector('span').click();
-    });
+    // this.$nextTick(function() {
+    //   document.querySelector('#navbarListLinks').querySelector('li').querySelector('span').click();
+    // });
   },
   methods: {
     activeLink(event) {
@@ -133,7 +117,7 @@ export default {
           case 200:
             cookieUtils.deleteCookie('ivo_refresh_token');
             cookieUtils.deleteCookie('ivo_access_token');
-            router.push({ name: 'LoginView' });
+            router.push({ name: 'auth.login' });
             break;
         }
       });

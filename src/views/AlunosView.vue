@@ -11,8 +11,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="aluno in alunos" :key="aluno.pk">
-          <td class="d-none">{{ aluno.pk }}</td>
+        <tr v-for="(aluno, index) in alunos.results" :key="index">
           <td>{{ aluno.first_name }} {{ aluno.last_name }}</td>
           <td>{{ aluno.email }}</td>
           <td v-if="aluno.is_active">
@@ -21,7 +20,7 @@
           <td v-else><i class="bi bi-x-square-fill text-danger"></i></td>
           <td v-if="!aluno.is_active">
             <button
-              @click="criarAcessoModal(aluno.pk, aluno.first_name, aluno.email)"
+              @click="criarAcessoModal(aluno.uuid, aluno.first_name, aluno.email)"
               type="button"
               class="btn btn-primary"
             >
@@ -65,7 +64,7 @@
                   required
                 />
                 <input type="hidden" name="emailAluno" />
-                <input type="hidden" name="pkAluno" />
+                <input type="hidden" name="uuidAluno" />
               </div>
               <div>
                 <strong>OBS:</strong>
@@ -84,13 +83,15 @@
                   @click="criarAcesso"
                   type="button"
                   class="btn btn-primary"
+                  :disabled="btnCriarAcesso.disabled"
                 >
                   <span
                     id="spinner"
                     class="spinner-border spinner-border-sm me-2 d-none"
                     aria-hidden="true"
+                    v-show="btnCriarAcesso.spinner"
                   ></span>
-                  <span role="status">Confirmar</span>
+                  <span role="status">{{ btnCriarAcesso.text }}</span>
                 </button>
               </div>
             </form>
@@ -103,9 +104,9 @@
 </template>
 
 <script>
-import cookieUtils from "@/utils/cookieUtils";
 import { Modal, Toast } from "bootstrap";
 import ToastComponent from "@/components/ToastComponent.vue";
+import IvoUserService from "@/services/ivo/user/IvoUserService";
 
 export default {
   name: "AlunosView",
@@ -119,6 +120,11 @@ export default {
         header: "",
         body: "",
       },
+      btnCriarAcesso: {
+        text: "Confirmar",
+        spinner: false,
+        disabled: false,
+      },
     };
   },
   components: {
@@ -130,30 +136,24 @@ export default {
   },
   methods: {
     async getAllAlunos() {
-      const auth = cookieUtils.getCookie("ivo_access_token");
-      const req = await fetch(
-        `${process.env.VUE_APP_IVO_API_URL}/user/role/aluno/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${auth}`,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const ivoUserService = new IvoUserService(),
+        response = await ivoUserService.getAllAlunos();
 
-      const res = await req.json();
-
-      this.alunos = res;
+      switch (response.status_code) {
+        case 200:
+          this.alunos = response.json;
+          break;
+        default:
+          break;
+      }
     },
-    criarAcessoModal(pk, firstName, email) {
+    criarAcessoModal(uuid, firstName, email) {
       const exampleModal = document.querySelector("#exampleModal");
       exampleModal.querySelector(
         'input[type="hidden"][name="emailAluno"]'
       ).value = email;
-      exampleModal.querySelector('input[type="hidden"][name="pkAluno"]').value =
-        pk;
+      exampleModal.querySelector('input[type="hidden"][name="uuidAluno"]').value =
+        uuid;
       exampleModal.querySelector(
         ".modal-title"
       ).innerHTML = `Criar acesso para ${firstName}`;
@@ -162,7 +162,7 @@ export default {
     async criarAcesso() {
       const exampleModal = document.querySelector("#exampleModal"),
         data = {
-          pk: exampleModal.querySelector('input[type="hidden"][name="pkAluno"]')
+          uuid: exampleModal.querySelector('input[type="hidden"][name="uuidAluno"]')
             .value,
           email: exampleModal.querySelector(
             'input[type="hidden"][name="emailAluno"]'
@@ -172,35 +172,36 @@ export default {
 
       if (!data.senha) return;
 
-      const modalBtnConfirm = document.querySelector("#modalBtnConfirm");
-      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
-      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
-        "Carregando...";
+      this.btnCriarAcesso.text = "Aguarde...";
+      this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
+      this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
 
-      const auth = cookieUtils.getCookie("ivo_access_token"),
-        req = await fetch(
-          `${process.env.VUE_APP_IVO_API_URL}/user/${data.pk}/`,
-          {
-            method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${auth}`,
-              Accept: "application/json",
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              password: data.senha,
-            }),
-          }
-        ),
-        res = await req.json();
-      console.log(res);
-      modalBtnConfirm.querySelector("#spinner").classList.toggle("d-none");
-      modalBtnConfirm.querySelector('span[role="status"]').innerHTML =
-        "Confirmar";
-      exampleModal.querySelector('button[class="btn-close"]').click();
-      this.toastData.header = "Criar Acesso";
-      this.toastData.body = "Senha próvisória criada com sucesso!";
-      Toast.getOrCreateInstance(document.querySelector("#liveToast")).show();
+      const ivoUserService = new IvoUserService(),
+        response = await ivoUserService.mudarSenhaAluno(
+          JSON.stringify({
+            password: data.senha,
+            confirm_password: data.senha,
+          }),
+          data.uuid
+        );
+
+      switch (response.status_code) {
+        case 200:
+          this.btnCriarAcesso.text = "Confirmar";
+          this.btnCriarAcesso.spinner = !this.btnCriarAcesso.spinner;
+          this.btnCriarAcesso.disabled = !this.btnCriarAcesso.disabled;
+
+          exampleModal.querySelector('button[class="btn-close"]').click();
+
+          this.toastData.header = "Criar Acesso";
+          this.toastData.body = "Senha próvisória criada com sucesso!";
+          Toast.getOrCreateInstance(
+            document.querySelector("#liveToast")
+          ).show();
+          break;
+        default:
+          break;
+      }
     },
   },
 };
