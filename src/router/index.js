@@ -12,6 +12,7 @@ import TreinamentoView from "@/views/TreinamentoView.vue";
 import IntencoesView from "@/views/treinamento/IntencoesView.vue";
 import RespostasView from "@/views/treinamento/RespostasView.vue";
 import DialogosView from "@/views/treinamento/DialogosView.vue";
+import AdminChatView from "@/views/AdminChatView.vue";
 
 const routes = [
   {
@@ -43,7 +44,7 @@ const routes = [
 
           const ivoUserService = new IvoUserService(),
             response = await ivoUserService.getCurrentUser();
-          
+
           if (response.json.role === 2 && !response.json.is_password_changed) {
             to.params.userUuid = response.json.uuid;
             return true;
@@ -68,6 +69,26 @@ const routes = [
     },
     children: [
       {
+        path: 'admin',
+        name: 'home.admin',
+        children: [
+          {
+            path: 'chat',
+            name: 'home.admin.chat',
+            component: AdminChatView,
+            props: true,
+            beforeEnter: async (to) => {
+              const ivoUserService = new IvoUserService(),
+                response = await ivoUserService.getCurrentUser();
+
+              to.params.userUuid = response.json.uuid;
+
+              return true;
+            }
+          }
+        ]
+      },
+      {
         path: 'alunos',
         name: 'home.alunos',
         component: AlunosView,
@@ -85,7 +106,7 @@ const routes = [
         beforeEnter: async (to) => {
           const ivoUserService = new IvoUserService(),
             response = await ivoUserService.getCurrentUser();
-          
+
           to.params.userUuid = response.json.uuid;
 
           return true;
@@ -125,7 +146,7 @@ const routes = [
 async function isAuthenticated() {
   const ivoUserService = new IvoUserService(),
     response = await ivoUserService.getCurrentUser();
-  
+
   console.log(response.json);
 
   switch (response.status_code) {

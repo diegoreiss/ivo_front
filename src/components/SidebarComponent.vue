@@ -18,7 +18,8 @@
         <SidebarLinkComponent :to="'/home/pendencias'" :name="'Pendências'" :icon="'bi bi-clipboard-data'" />
       </li>
       <li class="nav-item">
-        <SidebarLinkComponent :to="'/home/chat'" :name="'Chat'" :icon="'bi bi-chat-left-text'" />
+        <SidebarLinkComponent v-if="user.role === 2" :to="'/home/chat'" :name="'Chat'" :icon="'bi bi-chat-left-text'" />
+        <SidebarLinkComponent v-if="user.role === 1" :to="'/home/admin/chat'" :name="'Chat'" :icon="'bi bi-chat-left-text'" />
       </li>
       <li class="nav-item" v-if="user.role === 1">
         <SidebarLinkComponent :to="'/home/alunos'" :name="'Alunos'" :icon="'bi bi-people'" />

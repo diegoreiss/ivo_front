@@ -60,19 +60,24 @@
               <div class="msg-body">
                 <ul id="listMessages" class="pe-4">
                   <li v-for="(message, index) in messages" :key="index" :class="{
-                                            sender: message.sender,
-                                            'repaly text-end': !message.sender,
+                                            sender: message.user !== this.userUuid,
+                                            'repaly text-end': message.user === this.userUuid,
                                           }" class="d-block w-100 position-relative my-3">
                     <div id="message-text" class="fs-6 p-3 lh-base fw-normal d-inline-block rounded message-box-item"
                       :class="{
+                                              'text-dark bg-info scale-up-hor-left':
+                                              message.title === 'Aviso',
                                               'text-dark bg-secondary bg-opacity-10 scale-up-hor-left':
-                                                message.sender,
+                                                message.user !== this.userUuid,
                                               'text-light mybg-red bg-opacity-75 scale-up-hor-right':
-                                                !message.sender,
+                                                message.user === this.userUuid,
                                             }">
+                      <div class="d-flex flex-column">
+                        <span class="mb-3 opacity-50">{{ message.title }}</span>
+                        <span class="message-text-content text-break">{{ message.message}}</span>
+                      </div>
                       <div v-if="message.sender" v-show="message.spinnerLoading"
                         class="spinner-grow spinner-grow-sm text-secondary" role="status"></div>
-                      <span class="message-text-content text-break">{{ message.message}}</span>
                     </div>
                     <div v-if="message.data.buttons" class="mt-2">
                       <div class="button-options-container d-flex justify-content-start align-items-center gap-3">
@@ -117,6 +122,7 @@ export default {
       formMessage: {
         enabled: true,
       },
+      botShouldRespond: true,
       messages: [],
       newMessage: "",
       chatSocket: null,
@@ -133,8 +139,14 @@ export default {
       console.info('Websocket connection opened :)');
     };
 
-    this.chatSocket.onmessage = function (e) {
-      console.log(e.data);
+    this.chatSocket.onmessage = (e) => {
+      const message = JSON.parse(e.data);
+      console.log('bot vai responder? ' + message.message.bot_should_respond);
+      if (message.message.title === 'Aviso' || message.message.title === 'Coordenador') {
+        this.messages.push(message.message);
+      }
+
+      this.botShouldRespond = message.message.bot_should_respond;
     }
 
     this.chatSocket.onclose = function () {
@@ -242,10 +254,12 @@ export default {
       if (!this.newMessage) return;
 
       const userMessageData = {
+        user: this.userUuid,
+        title: 'Aluno',
         timestamp: new Date().getTime(),
         sender: false,
         spinnerLoading: false,
-        bot_should_respond: true,
+        bot_should_respond: this.botShouldRespond,
         type: 'chat_user_message',
         message: this.newMessage,
         data: {
@@ -258,6 +272,8 @@ export default {
         }
       },
         botMessageData = {
+          user: 'bot',
+          title: 'I.V.O Bot',
           timestamp: null,
           sender: true,
           spinnerLoading: true,
@@ -278,18 +294,30 @@ export default {
 
       this.messages.push(userMessageData);
       this.chatSocket.send(JSON.stringify(userMessageData));
+
+      console.log(this.botShouldRespond);
+      if (!this.botShouldRespond) {
+        this.newMessage = "";
+        return;
+      }
+
       this.messages.push(botMessageData);
       botMessagesArray.push(botMessageData);
 
       this.formMessage.enabled = false;
-      const lastMessage = this.getLastMessage(),
-        botService = new BotService(),
+      const lastMessage = this.getLastMessage();
+
+      console.log(lastMessage.bot_should_respond);
+
+      const botService = new BotService(),
         response = await botService.sendMessageToBot(
           JSON.stringify({
             sender: `user_${this.userUuid}`,
             message: this.newMessage,
           })
         );
+      
+      console.log(response);
 
       response.json.forEach((message, index) => {
         if (index === 0) {
