@@ -60,32 +60,43 @@
               <div class="msg-body">
                 <ul id="listMessages" class="pe-4">
                   <li v-for="(message, index) in messages" :key="index" :class="{
-                                            sender: message.user !== this.userUuid,
-                                            'repaly text-end': message.user === this.userUuid,
-                                          }" class="d-block w-100 position-relative my-3">
+                                                sender: message.user !== this.userUuid,
+                                                'repaly text-end': message.user === this.userUuid,
+                                              }" class="d-block w-100 position-relative my-3">
                     <div id="message-text" class="fs-6 p-3 lh-base fw-normal d-inline-block rounded message-box-item"
                       :class="{
-                                              'text-dark bg-info scale-up-hor-left':
-                                              message.title === 'Aviso',
-                                              'text-dark bg-secondary bg-opacity-10 scale-up-hor-left':
-                                                message.user !== this.userUuid,
-                                              'text-light mybg-red bg-opacity-75 scale-up-hor-right':
-                                                message.user === this.userUuid,
-                                            }">
+                                                  'text-dark bg-info scale-up-hor-left':
+                                                  message.title === 'Aviso',
+                                                  'text-dark bg-secondary bg-opacity-10 scale-up-hor-left':
+                                                    message.user !== this.userUuid,
+                                                  'text-light mybg-red bg-opacity-75 scale-up-hor-right':
+                                                    message.user === this.userUuid,
+                                                }">
                       <div class="d-flex flex-column">
                         <span class="mb-3 opacity-50">{{ message.title }}</span>
-                        <span class="message-text-content text-break">{{ message.message}}</span>
+                        <span class="message-text-content text-break">{{ message.message }}</span>
+                        <div v-if="message.data.attachment">
+                          <div class="attachment-container">
+                            <a class="btn btn-sm btn-primary" :href="message.data.attachment.payload.src" target="_blank"
+                              download>
+                              <i class="bi bi-file-earmark-text me-1"></i>
+                              {{ message.data.attachment.payload.title }}
+                              <i class="bi bi-download ms-2"></i>
+                            </a>
+                          </div>
+                        </div>
+                        <div v-if="message.data.buttons" class="mt-2">
+                          <div class="button-options-container d-flex justify-content-start align-items-center gap-3">
+                            <button @click="escolherOpcaoBot(button.payload)"
+                              v-for="(button, index) in message.data.buttons" :key="index"
+                              class="btn btn-sm btn-secondary">
+                              {{ button.title }}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       <div v-if="message.sender" v-show="message.spinnerLoading"
                         class="spinner-grow spinner-grow-sm text-secondary" role="status"></div>
-                    </div>
-                    <div v-if="message.data.buttons" class="mt-2">
-                      <div class="button-options-container d-flex justify-content-start align-items-center gap-3">
-                        <button @click="escolherOpcaoBot(button.payload)" v-for="(button, index) in message.data.buttons"
-                          :key="index" class="btn btn-sm btn-secondary">
-                          {{ button.title }}
-                        </button>
-                      </div>
                     </div>
                   </li>
                 </ul>
@@ -96,7 +107,8 @@
                 <input v-model="newMessage" class="form-control" type="text" name="inputMessage" id="inputMessage"
                   aria-label="mensagem..." placeholder="Escreva uma mensagem..." autocomplete="off"
                   :disabled="!formMessage.enabled" @keyup.enter="sendMessage" />
-                <button @click="sendMessage" :disabled="!formMessage.enabled" type="submit" class="btn text-white fs-6 w-25 mybg-red">
+                <button @click="sendMessage" :disabled="!formMessage.enabled" type="submit"
+                  class="btn text-white fs-6 w-25 mybg-red">
                   <i class="bi bi-send-plus-fill me-2"></i>
                   Enviar
                 </button>
@@ -133,7 +145,7 @@ export default {
     };
   },
   created() {
-    this.chatSocket = new WebSocket(`${process.env.VUE_APP_IVO_WEBSOCKET_URL}/chat/${this.userUuid}/`);
+    this.chatSocket = new WebSocket(`${process.env.VUE_APP_IVO_WEBSOCKET_URL}/chat/${this.userUuid}/?uuid=${this.userUuid}`);
 
     this.chatSocket.onopen = function () {
       console.info('Websocket connection opened :)');
@@ -141,7 +153,6 @@ export default {
 
     this.chatSocket.onmessage = (e) => {
       const message = JSON.parse(e.data);
-      console.log('bot vai responder? ' + message.message.bot_should_respond);
       if (message.message.title === 'Aviso' || message.message.title === 'Coordenador') {
         this.messages.push(message.message);
       }
@@ -244,7 +255,6 @@ export default {
         default:
           break;
       }
-      console.log(response);
     },
     getLastMessage() {
       return this.messages[this.messages.length - 1];
@@ -295,7 +305,6 @@ export default {
       this.messages.push(userMessageData);
       this.chatSocket.send(JSON.stringify(userMessageData));
 
-      console.log(this.botShouldRespond);
       if (!this.botShouldRespond) {
         this.newMessage = "";
         return;
@@ -307,8 +316,6 @@ export default {
       this.formMessage.enabled = false;
       const lastMessage = this.getLastMessage();
 
-      console.log(lastMessage.bot_should_respond);
-
       const botService = new BotService(),
         response = await botService.sendMessageToBot(
           JSON.stringify({
@@ -316,7 +323,7 @@ export default {
             message: this.newMessage,
           })
         );
-      
+
       console.log(response);
 
       response.json.forEach((message, index) => {
@@ -330,6 +337,8 @@ export default {
           lastMessage.message = message.text;
         } else {
           const botOtherMessages = {
+            user: 'bot',
+            title: 'I.V.O Bot',
             timestamp: new Date().getTime(),
             sender: true,
             spinnerLoading: false,
@@ -346,6 +355,10 @@ export default {
             }
           };
 
+          if (message.attachment) {
+            botOtherMessages.data.attachment = message.attachment;
+          }
+
           this.messages.push(botOtherMessages);
           botMessagesArray.push(botOtherMessages);
         }
@@ -358,8 +371,6 @@ export default {
       botMessagesArray.forEach(m => this.chatSocket.send(JSON.stringify(m)));
     },
     escolherOpcaoBot(opcao) {
-      console.log('cliquei');
-      console.log(opcao);
       this.newMessage = opcao;
       this.sendMessage();
     }

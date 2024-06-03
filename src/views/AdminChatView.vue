@@ -116,7 +116,7 @@ export default {
     },
     connectToUserRoomWebSocket(roomName) {
       this.exitRoomWebSocket();
-      this.selectedUserRoomWebSocket = new WebSocket(`${process.env.VUE_APP_IVO_WEBSOCKET_URL}/chat/${roomName}/`);
+      this.selectedUserRoomWebSocket = new WebSocket(`${process.env.VUE_APP_IVO_WEBSOCKET_URL}/chat/${roomName}/?uuid=${this.userUuid}`);
 
       this.selectedUserRoomWebSocket.onopen = () => {
         console.log('user room websocket connection opened');
@@ -179,7 +179,7 @@ export default {
       };
 
       this.selectedUserRoomWebSocket.send(JSON.stringify(userMessageData));
-
+      this.selectedUserRoomWebSocket.close();
       this.selectedUserMessages.length = 0;
     },
     async gotoUserRoom(roomName, index) {
