@@ -37,6 +37,8 @@ export default {
     return {
     }
   },
+  emits: [
+  ],
   computed: {
     pagesToShow() {
       const currentPage = this.currentPage,

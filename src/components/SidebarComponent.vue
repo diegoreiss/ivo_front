@@ -85,11 +85,6 @@ export default {
     }
 
   },
-  mounted() {
-    // this.$nextTick(function() {
-    //   document.querySelector('#navbarListLinks').querySelector('li').querySelector('span').click();
-    // });
-  },
   methods: {
     activeLink(event) {
       document.querySelector('#navbarListLinks')

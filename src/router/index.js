@@ -97,6 +97,13 @@ const routes = [
         path: 'pendencias',
         name: 'home.pendencias',
         component: PendenciasView,
+        props: true,
+        beforeEnter: async (to) => {
+          const ivoUserService = new IvoUserService(),
+            response = await ivoUserService.getCurrentUser();
+          
+          to.params.user = response.json;
+        }
       },
       {
         path: 'chat',
