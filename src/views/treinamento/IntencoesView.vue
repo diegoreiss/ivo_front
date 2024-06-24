@@ -203,7 +203,7 @@
         @onPageChange="changePage"
       />
     </div>
-    <ToastComponent ref="toastComponent" :toastData="toast" />
+    <ToastComponent ref="toastIntentsComponent" :toastData="toast" />
   </div>
 </template>
 
@@ -212,6 +212,7 @@ import PaginationComponent from "@/components/PaginationComponent.vue";
 import BotService from "@/services/ivo/bot/BotService";
 import { Modal } from "bootstrap";
 import ToastComponent from "@/components/ToastComponent.vue";
+import router from "@/router";
 
 export default {
   name: "IntencoesView",
@@ -299,7 +300,7 @@ export default {
         this.toast.header = "Adicionar Intenção";
         this.toast.body = "Essa inteção já existe!";
         this.toast.bg = "text-bg-danger";
-        this.$refs.toastComponent.showToast();
+        this.$refs.toastIntentsComponent.showToast();
         return;
       }
 
@@ -324,6 +325,22 @@ export default {
         JSON.stringify(newIntentCopy)
       );
       console.log(response.json);
+      switch (response.status_code) {
+        case 201:
+          this.toast.header = "Adicionar Inenção";
+          this.toast.body = "Intenção adicionada com sucesso!";
+          this.toast.bg = "text-bg-success";
+          this.$refs.toastIntentsComponent.showToast();
+          break;
+        case 401:
+        case 403:
+        case 500:
+          router.push({ name: "auth.login" });
+          break;
+        default:
+          router.push({ name: "auth.login" });
+          break;
+      }
     },
     async editIntent() {
       this.editIntentObj.inputValue = this.editIntentObj.inputValue.trim();
@@ -334,7 +351,7 @@ export default {
         this.toast.header = "Editar Intenção";
         this.toast.body = "Essa inteção já existe!";
         this.toast.bg = "text-bg-danger";
-        this.$refs.toastComponent.showToast();
+        this.$refs.toastIntentComponent.showToast();
         return;
       }
 
@@ -369,11 +386,29 @@ export default {
           examples: examplesJoined,
         }),
         botService = new BotService(),
-        response = await botService.editIntentExamples(body, currentIntentCopy.intent);
+        response = await botService.editIntentExamples(
+          body,
+          currentIntentCopy.intent
+        );
 
       console.log(response);
-
-      this.nlu.currentIntent.examples = currentIntentCopy.examples;
+      switch (response.status_code) {
+        case 200:
+          this.toast.header = "Alterar Intenção";
+          this.toast.body = "Mudanças salvas";
+          this.toast.bg = "text-bg-success";
+          this.$refs.toastIntentsComponent.showToast();
+          this.nlu.currentIntent.examples = currentIntentCopy.examples;
+          break;
+        case 401:
+        case 403:
+        case 500:
+          router.push({ name: "auth.login" });
+          break;
+        default:
+          router.push({ name: "auth.login" });
+          break;
+      }
     },
   },
 };

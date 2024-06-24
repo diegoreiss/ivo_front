@@ -1,58 +1,92 @@
 <template>
   <div class="pageBody">
-    <nav class="navbar bg-body-tertiary" data-bs-theme="dark">
+    <!-- <nav class="navbar bg-body-tertiary" data-bs-theme="dark">
       <div class="container-fluid">
         <a class="navbar-brand"></a>
         <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Aluno ou Descrição" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Procurar</button>
+          <input
+            class="form-control me-2"
+            type="search"
+            placeholder="Aluno ou Descrição"
+            aria-label="Search"
+          />
+          <button class="btn btn-outline-success" type="submit">
+            Procurar
+          </button>
         </form>
       </div>
-    </nav>
+    </nav> -->
     <div id="userPendencia" class="px-3 pt-3 overflow-y-scroll">
-      <div class="card text-center mb-3" v-for="(pendencia, index) in pendenciasResults" :key="index">
-        <div class="card-header d-flex align-items-center justify-content-between">
+      <div
+        class="card text-center mb-3"
+        v-for="(pendencia, index) in pendenciasResults"
+        :key="index"
+      >
+        <div
+          class="card-header d-flex align-items-center justify-content-between"
+        >
           <div class="text-start">
             <span class="fw-bold me-2 fs-6">Aluno:</span>
-            <span>{{ pendencia.custom_user_first_name }} {{ pendencia.custom_user_last_name }}</span>
+            <span
+              >{{ pendencia.custom_user_first_name }}
+              {{ pendencia.custom_user_last_name }}</span
+            >
           </div>
           <div class="text-end">
-            <button v-if="$props.user.role === 1" class="btn btn-sm btn-success">Marcar como resolvido</button>
+            <button
+              v-show="pendencia.status !== 2"
+              @click="changeStatusPendencia(pendencia, 2)"
+              v-if="$props.user.role === 1"
+              class="btn btn-sm btn-success"
+            >
+              Marcar como resolvido
+            </button>
           </div>
         </div>
         <div class="card-body text-start">
           <h5 class="card-title">Descrição</h5>
           <p class="card-text">{{ pendencia.descricao }}</p>
         </div>
-        <div class="card-footer text-body-secondary d-flex align-items-center justify-content-between">
+        <div
+          class="card-footer text-body-secondary d-flex align-items-center justify-content-between"
+        >
           <div class="text-start">
             <span class="fw-bold me-2 fs-6">Em:</span>
             <span>{{ this.formatDate(pendencia.criado_em) }}</span>
           </div>
           <div class="text-end">
             <span class="fw-bold me-2 fs-6">Status:</span>
-            <span class="badge rounded-pill"
-              :class="{ 'text-bg-warning': pendencia.status === 1, 'text-bg-success': pendencia.status === 2 }">{{
-              pendenciaStatus[pendencia.status] }}</span>
+            <span
+              class="badge rounded-pill"
+              :class="{
+                'text-bg-warning': pendencia.status === 1,
+                'text-bg-success': pendencia.status === 2,
+              }"
+              >{{ pendenciaStatus[pendencia.status] }}</span
+            >
           </div>
         </div>
       </div>
     </div>
-    <hr>
-    <PaginationComponent :total-pages="this.pendenciasTotalPages" :current-page="this.pendenciasCurrentPage"
-      :item-per-page="10" @onPageChange="changePage" />
+    <hr />
+    <PaginationComponent
+      :total-pages="this.pendenciasTotalPages"
+      :current-page="this.pendenciasCurrentPage"
+      :item-per-page="10"
+      @onPageChange="changePage"
+    />
   </div>
 </template>
 
 <script>
-import PaginationComponent from '@/components/PaginationComponent.vue';
-import router from '@/router';
-import PendenciaService from '@/services/ivo/pendencias/PendenciaService';
+import PaginationComponent from "@/components/PaginationComponent.vue";
+import router from "@/router";
+import PendenciaService from "@/services/ivo/pendencias/PendenciaService";
 
 export default {
-  name: 'PendenciasView',
+  name: "PendenciasView",
   components: {
-    PaginationComponent
+    PaginationComponent,
   },
   data() {
     return {
@@ -65,13 +99,13 @@ export default {
       pendenciasListShow: true,
       currentPendencia: null,
       pendenciaStatus: {
-        1: 'Aguardando Resposta',
-        2: 'Resolvido'
-      }
+        1: "Aguardando Resposta",
+        2: "Resolvido",
+      },
     };
   },
   props: {
-    user: Object
+    user: Object,
   },
   created() {
     if (this.$props.user.role === 1) {
@@ -86,13 +120,16 @@ export default {
     async getPendenciasByUser() {
       this.pendenciasResults.length = 0;
       const pendenciaService = new PendenciaService(),
-        response = await pendenciaService.getPendenciasByUser(this.pendenciasCurrentPage, this.$props.user.uuid);
+        response = await pendenciaService.getPendenciasByUser(
+          this.pendenciasCurrentPage,
+          this.$props.user.uuid
+        );
 
       switch (response.status_code) {
         case 400:
         case 401:
         case 403:
-          router.push({ name: 'auth.login' });
+          router.push({ name: "auth.login" });
           break;
         case 200:
           console.log(response.json);
@@ -100,7 +137,7 @@ export default {
           this.pendenciasNext = response.json.next;
           this.pendenciasPrevious = response.json.previous;
           this.pendenciasTotalPages = response.json.total_pages;
-          response.json.results.forEach(p => this.pendenciasResults.push(p));
+          response.json.results.forEach((p) => this.pendenciasResults.push(p));
           break;
         default:
           break;
@@ -109,13 +146,15 @@ export default {
     async getPendencias() {
       this.pendenciasResults.length = 0;
       const pendenciaService = new PendenciaService(),
-        response = await pendenciaService.getAllPendencias(this.pendenciasCurrentPage);
+        response = await pendenciaService.getAllPendencias(
+          this.pendenciasCurrentPage
+        );
 
       switch (response.status_code) {
         case 400:
         case 401:
         case 403:
-          router.push({ name: 'auth.login' });
+          router.push({ name: "auth.login" });
           break;
         case 200:
           this.pendenciasCount = response.json.count;
@@ -123,7 +162,7 @@ export default {
           this.pendenciasPrevious = response.json.previous;
           this.pendenciasTotalPages = response.json.total_pages;
 
-          response.json.results.forEach(p => this.pendenciasResults.push(p));
+          response.json.results.forEach((p) => this.pendenciasResults.push(p));
           break;
         default:
           break;
@@ -132,16 +171,16 @@ export default {
     formatDate(date) {
       const myDate = new Date(date);
       const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        timeZoneName: 'short'
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        second: "numeric",
+        timeZoneName: "short",
       };
 
-      return myDate.toLocaleDateString('pt-BR', options);
+      return myDate.toLocaleDateString("pt-BR", options);
     },
     changePage(number) {
       console.log(number);
@@ -154,13 +193,34 @@ export default {
       }
 
       this.getPendenciasByUser();
-    }
+    },
+    async changeStatusPendencia(pendencia, number) {
+      const body = JSON.stringify({ status: number });
+
+      const pendenciaService = new PendenciaService(),
+        response = await pendenciaService.changePendencias(
+          body,
+          pendencia.uuid
+        );
+      switch (response.status_code) {
+        case 400:
+        case 401:
+        case 403:
+          router.push({ name: "auth.login" });
+          break;
+        case 200:
+          pendencia.status = number;
+          break;
+        default:
+          break;
+      }
+    },
   },
-}
+};
 </script>
 
 <style scoped>
 #userPendencia {
-  height: calc(100vh - 150px);
+  height: calc(100vh - 85px);
 }
 </style>

@@ -26,7 +26,7 @@
                 <NavbarNavLinkComponent :to="'/home/treinamento/dialogos'" :name="'Diálogos'" />
               </li>
             </ul>
-            <button class="btn btn-danger">Treinar Modelo</button>
+            <!-- <button class="btn btn-danger">Treinar Modelo</button> -->
           </div>
         </div>
       </nav>

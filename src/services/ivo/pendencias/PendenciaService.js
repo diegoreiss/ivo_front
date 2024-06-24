@@ -31,4 +31,18 @@ export default class PendenciaService {
 
     return new CustomDataResponse(response.status, await response.json());
   }
+
+  async changePendencias(body, uuid, path =`/${uuid}/status/`, method = 'PATCH') {
+    const response = await fetch(`${process.env.VUE_APP_IVO_API_URL}${PendenciaService.endpoint}${path}`, {
+      method,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Api-Key ${process.env.VUE_APP_IVO_API_KEY}`
+      },
+      body
+    });
+
+    return new CustomDataResponse(response.status, await response.json());
+  }
 }
